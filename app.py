@@ -1,102 +1,108 @@
 import streamlit as st
 from moviepy.editor import VideoFileClip, ImageClip, CompositeVideoClip
 from PIL import Image
-import numpy as np
 import os
 
-# Configurare interfață tip Studio
-st.set_page_config(page_title="TikTok Production Studio", layout="wide")
+# Configurare stil Studio Dark
+st.set_page_config(page_title="Video Motion Studio", layout="wide")
 
 st.markdown("""
     <style>
-    .stApp { background-color: #0e1117; color: white; }
-    .stButton>button { width: 100%; border-radius: 5px; height: 3em; background-color: #ff4b4b; color: white; font-weight: bold; }
+    .main { background-color: #111111; }
+    .stSidebar { background-color: #1a1a1a; }
+    div.stButton > button:first-child {
+        background-color: #00cc66;
+        color: white;
+        height: 3em;
+        font-size: 20px;
+        font-weight: bold;
+    }
+    .layer-box {
+        border: 1px solid #333;
+        padding: 10px;
+        border-radius: 5px;
+        background-color: #222;
+    }
     </style>
     """, unsafe_allow_html=True)
 
-st.title("🎬 Studio Video TikTok: Hand-Motion Alpha")
+st.title("🎬 Studio Motion Pro (Alpha Layers)")
 
-# --- COLOANE DE LUCRU ---
-col_timeline, col_preview = st.columns([1, 1])
+# --- ZONA DE MONTAJ (LAYOUT) ---
+col_preview, col_layers = st.columns([1.5, 1])
 
-with col_timeline:
-    st.subheader("🎞️ Canale Timeline (Layers)")
+with col_layers:
+    st.subheader("📼 Canale de Lucru (Layers)")
     
-    with st.expander("LAYER 1: Fundal (Background)", expanded=True):
-        bg_file = st.file_uploader("Urcă imaginea de fundal", type=["jpg", "png"], key="bg")
-
-    with st.expander("LAYER 2: Obiect Mișcat (Produs)", expanded=True):
-        obj_file = st.file_uploader("Urcă imaginea produsului", type=["jpg", "png"], key="obj")
-
-    with st.expander("LAYER 3: Mâna Alpha (Master)", expanded=True):
-        hand_file = st.file_uploader("Urcă clipul transparent (.webm)", type=["webm", "mov"], key="hand")
-
-    st.subheader("⚙️ Control Mișcare & Render")
-    durata = st.slider("Durată clip (secunde)", 1, 10, 5)
-    viteza = st.slider("Viteză animație", 100, 1000, 400)
-    directie = st.radio("Direcție mișcare", ["Stânga la Dreapta", "Dreapta la Stânga"], horizontal=True)
+    with st.container():
+        st.markdown("<div class='layer-box'>", unsafe_allow_html=True)
+        bg_file = st.file_uploader("Layer 1: Fundal", type=["jpg", "png"])
+        st.markdown("</div>", unsafe_allow_html=True)
+        
+        st.markdown("<div class='layer-box'>", unsafe_allow_html=True)
+        obj_file = st.file_uploader("Layer 2: Obiect/Produs", type=["jpg", "png"])
+        st.markdown("</div>", unsafe_allow_html=True)
+        
+        st.markdown("<div class='layer-box'>", unsafe_allow_html=True)
+        hand_file = st.file_uploader("Layer 3: Mâna (Alpha Video)", type=["webm", "mov"])
+        st.markdown("</div>", unsafe_allow_html=True)
 
 with col_preview:
-    st.subheader("📺 Monitor Previzualizare (Preview)")
+    st.subheader("📺 Monitor de Control")
     if bg_file and obj_file:
-        # Generăm un "Thumbnail" rapid pentru a vedea straturile
-        img_bg = Image.open(bg_file).convert("RGBA").resize((1080, 1920))
-        img_obj = Image.open(obj_file).convert("RGBA").resize((400, 400))
-        # Simulăm poziția pe monitor
-        img_bg.paste(img_obj, (340, 800), img_obj)
-        st.image(img_bg, caption="Draft Vizual: Verifică poziția straturilor", width=300)
+        # Generăm Preview Visual
+        bg_img = Image.open(bg_file).convert("RGBA").resize((1080, 1920))
+        obj_img = Image.open(obj_file).convert("RGBA").resize((450, 450))
+        
+        # Centrare preview
+        bg_img.paste(obj_img, (315, 800), obj_img)
+        st.image(bg_img, width=380)
     else:
-        st.info("Încarcă fișierele în timeline pentru a activa monitorul.")
+        st.info("Încarcă elementele pentru a activa monitorul de previzualizare.")
 
-# --- LOGICA DE RENDER (SAVE AS) ---
-if st.button("🚀 GENEREAZĂ PRODUCȚIA FINALĂ"):
+# --- TIMELINE & CONTROL (JOS) ---
+st.divider()
+st.subheader("⏳ Timeline & Setări Mișcare")
+c1, c2, c3, c4 = st.columns(4)
+
+with c1:
+    durata = st.number_input("Durată Video (sec)", 1, 10, 5)
+with c2:
+    viteza = st.select_slider("Viteză Mișcare", options=[200, 400, 600, 800], value=400)
+with c3:
+    directie = st.selectbox("Direcție Animație", ["Stânga la Dreapta", "Dreapta la Stânga"])
+with c4:
+    offset_y = st.slider("Poziție Verticală Obiect", 400, 1500, 900)
+
+# --- RENDER BUTTON ---
+if st.button("🚀 RENDER & SAVE VIDEO (TIKTOK FORMAT)"):
     if bg_file and hand_file and obj_file:
-        with st.spinner("Se procesează canalele... Te rog așteaptă."):
+        with st.spinner("Producția este în curs..."):
             try:
-                # Salvare fișiere temporare
-                with open("temp_bg.png", "wb") as f: f.write(bg_file.read())
-                with open("temp_hand.webm", "wb") as f: f.write(hand_file.read())
-                with open("temp_obj.png", "wb") as f: f.write(obj_file.read())
+                # Salvare temp
+                with open("b.png", "wb") as f: f.write(bg_file.read())
+                with open("o.png", "wb") as f: f.write(obj_file.read())
+                with open("h.webm", "wb") as f: f.write(hand_file.read())
                 
-                W, H = 1080, 1920 # Format TikTok
+                W, H = 1080, 1920
                 
-                # 1. Procesare Fundal
-                bg_clip = ImageClip("temp_bg.png").set_duration(durata).resize(height=H)
-                if bg_clip.w > W: bg_clip = bg_clip.crop(x_center=bg_clip.w/2, width=W)
-                
-                # 2. Logica de mișcare matematică (Sincronizare)
+                # Logică Mișcare
                 def get_pos(t):
-                    if directie == "Stânga la Dreapta":
-                        x = -400 + (viteza * t)
-                    else:
-                        x = W + 100 - (viteza * t)
-                    return (x, H/2)
+                    x = -500 + (viteza * t) if directie == "Stânga la Dreapta" else W + 200 - (viteza * t)
+                    return (x, offset_y)
 
-                # 3. Stratul Mână (Alpha)
-                hand_clip = (VideoFileClip("temp_hand.webm", has_mask=True)
-                             .loop(duration=durata)
-                             .resize(width=600)
-                             .set_position(get_pos))
-
-                # 4. Stratul Obiect (Urmărește mâna)
-                # Îi dăm un mic offset (+100, +150) ca să pară că e sub palma mâinii
-                obj_clip = (ImageClip("temp_obj.png")
-                            .set_duration(durata)
-                            .resize(width=400)
-                            .set_position(lambda t: (get_pos(t)[0] + 100, get_pos(t)[1] + 150)))
-
-                # 5. Compoziție Finală (Layering)
-                final_video = CompositeVideoClip([bg_clip, obj_clip, hand_clip], size=(W, H))
-                output_file = "tiktok_final.mp4"
-                final_video.write_videofile(output_file, fps=30, codec="libx264", audio=False)
+                # Clips
+                bg = ImageClip("b.png").set_duration(durata).resize(height=H)
+                if bg.w > W: bg = bg.crop(x_center=bg.w/2, width=W)
                 
-                # Afișare și Download
-                st.video(output_file)
-                with open(output_file, "rb") as f:
-                    st.download_button("📥 DESCARCĂ VIDEO (SAVE AS)", f, file_name="video_tiktok.mp4")
-                st.success("Randare finalizată cu succes!")
+                obj = ImageClip("o.png").set_duration(durata).resize(width=450).set_position(lambda t: (get_pos(t)[0]+50, get_pos(t)[1]+50))
+                hand = VideoFileClip("h.webm", has_mask=True).loop(duration=durata).resize(width=650).set_position(get_pos)
 
+                final = CompositeVideoClip([bg, obj, hand], size=(W, H))
+                final.write_videofile("out.mp4", fps=30, codec="libx264", audio=False)
+                
+                st.video("out.mp4")
+                with open("out.mp4", "rb") as f:
+                    st.download_button("📥 SALVEAZĂ VIDEO", f, file_name="tiktok.mp4")
             except Exception as e:
-                st.error(f"Eroare la randare: {e}")
-    else:
-        st.warning("⚠️ Toate canalele (1, 2 și 3) trebuie să conțină fișiere!")
+                st.error(f"Eroare: {e}")
